@@ -1,0 +1,129 @@
+orbit:
+
+adjust for leapfrog
+
+
+evo:
+
+instant response to keystrokes - how?  sleep periodically?
+
+automate preparing an image for deviantart
+
+don't require genomes to be of one exact size
+
+direct image generation via tusl commands, like Pan
+
+expensive to recompile for every tile?
+
+memory leak?  when i use small tiles it gets more sluggish over time.
+maybe that's because stuff only gets freed after a whole picture is
+done?  uh, that idea doesn't make much sense.  still, look into it.
+
+number output PPMs consecutively across runs, with a file giving the
+next number to use, or something.
+
+breeding
+
+record pedigrees
+
+coord system calculated wrong when tiles don't fill screen exactly?
+
+big image filling the whole sdl window, not discretized to thumbnail grid
+
+handle tall, narrow aspect ratio properly
+
+darker color model as alternative to hwb
+
+blit thumbnails to the screen individually, rather than a full show after each
+
+ensure random seed is repeatable so that equal thumbnails are identical
+(already done?)
+
+try just getting rid of tiling
+
+undo
+
+generate .png directly?  will Windows Explorer show thumbnails of PNGs
+for us?  In general, is there an image format that's
+ - lossless
+ - carries metadata we can stuff the genome into
+ - displayable as a thumbnail in the file manager
+ - simple to generate?
+
+
+turtles:
+
+get conditionals to actually have a visible effect
+
+'b' command as in evo
+
+save/restore/etc
+
+handle mouse-click outside grid
+
+
+tusl:
+
+floating point math ops are buggered
+
+help C programs to be designed for transparency, not just for scriptability 
+(vague requirement -- please refine)
+
+tracebacks 
+actually just printing the name of the word we're in at the
+time of the error would help
+
+source-location info for compiled words
+
+dynamic loading
+
+tracing doesn't print the # word for some reason?
+that's only at the top-level interpreter that it's a problem
+(since we're not calling #, we're pushing the number directly)
+
+
+done:
+
+allow shorter evo-state file
+
+batch generation without needing a full evo-state file
+(though it'd be nice if i didn't have to edit it)
+
+check for conflicting primitive defs
+(add some kind of module system?)
+just always warn on redefs, for now
+
+full dependencies in makefile
+
+access to command-line args (via command-line tusl commands)
+
+bug - everything goes blank after 3rd generation
+
+cadge ui code from evo
+
+frame each tile
+
+mouse-handler bug?
+
+rename rc files
+
+colors
+
+cache thumbnails
+
+cut down on duplicate images in mutation grid
+
+keystroke or mouse button to append a single genome to the save file
+
+load a random assortment from the save file
+
+make it look more interesting somehow
+
+diffusion
+
+get yin-yang displaying again
+
+refactor active-turtle list to accommodate conditionals
+
+add conditionals
+

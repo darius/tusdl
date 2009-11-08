@@ -1,0 +1,41 @@
+casdl -- cellular automata with libsdl
+
+Copyright (C) 2002 Darius Bacon <darius@accesscom.com>
+Distributed under the MIT license
+(http://opensource.org/licenses/mit-license.php)
+
+To build: 
+First, install libsdl (http://www.libsdl.org).  Then:
+$ make
+
+To run:
+$ ./casdl.sh
+
+Then hit `q' in the animation window that pops up, to advance from one
+demo to the next.  Or, you can run stuff interactively in the casdl
+command loop, if you're using Linux (in Windows, SDL has its own
+main() function that intercepts standard input/output and doesn't let
+you see them until after the program exits; bleah):
+
+1. ./runtusdl 
+This will start up the interpreter.  Then type at the prompt:
+
+2. "casdl.ts" load
+This will pop up a blank graphics window; you can type commands to
+stdin.  Suggested commands to enter:
+
+2. r-pentomino
+This should start the Game of Life running in the graphics window,
+with the ``r pentomino'' initial configuration.  You can freeze it by
+typing `q' with the input focus on the graphics window; then the
+program will listen for more commands from stdin.
+
+3. life-step show
+This steps the above process forward by one frame.
+
+3. bubbles
+Clears the graphics and starts a different rule & configuration going.
+Other commands to try: s and m
+Other stuff undocumented...
+
+4. Freeze the graphics and enter the EOF character to quit.

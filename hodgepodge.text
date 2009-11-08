@@ -1,0 +1,44 @@
+const max_health := 100
+
+2 dimensions of 
+	state of 0..2
+	health of 0..max_health
+end
+
+# Get the Moore neighborhood
+#
+neighbor[] for 8
+	:= [0, 1].health, [1, 1].health, [1, 0].health, [1, -1].health, 
+	   [0, -1].health, [-1, -1].health, [-1, 0].health, [-1, 1].health
+
+const k1 := 2
+const k2 := 3
+const g  := 23
+
+infected := 0
+ill := 0
+sum := cell.health
+
+forall i
+	infected := infected + 1 when neighbor[i] > 0 & neighbor[i] < max_health
+	ill := ill + 1 when neighbor[i] = max_health
+	sum := sum + neighbor[i]
+end
+
+if cell.health = 0 then
+	health := ill/k1 + infected/k2
+	cell.health := health
+	cell.state := 0 when health = 0
+                   := 1 when health < max_health
+                   := 2 otherwise
+elsif cell.health = max_health then
+	cell.health := 0
+	cell.state := 0
+else
+	health := sum/(infected + 1) + g
+	cell.health := health when health <= max_health
+                    := max_health otherwise
+	cell.state := 0 when health = 0
+	           := 1 when health < max_health
+	           := 2 otherwise
+end

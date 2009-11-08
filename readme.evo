@@ -1,0 +1,21 @@
+This program brings up a window showing 25 random pictures in a 5-by-5
+grid; you pick which you like best, click on it, and the program
+generates 24 random variations on it, and we keep repeating until you
+have a cool enough picture or you're just sick of it. 
+
+There are also some keyboard commands:
+
+ q quit       Quit the program.
+ b big        Make the top-left image big, filling the window.
+ g grid       Go back to showing the 5x5 grid.
+ s save       Save what we have, in the file evo-state.
+ r restore    Bring back the saved state.
+ i image      Write what's currently displayed, into the file evo-image.ppm.
+ f fresh      Start afresh with random images.
+ a append     Like `save', but appends to evo-saved, instead of
+              overwriting evo-state.
+ 1 append-1   Like `append', but only appends the top-left genome.
+ v variety    Load a variety of genomes picked at random from evo-saved.
+ ! shell      Start executing typed commands (undocumented).
+
+To start it, run 'evo.sh' in the directory containing this file.  Enjoy!
