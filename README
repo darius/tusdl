@@ -1,0 +1,38 @@
+tusdl: tusl with libsdl.
+
+Copyright (C) 2004 Darius Bacon <darius@accesscom.com>
+Distributed under the MIT license
+(http://opensource.org/licenses/mit-license.php)
+
+
+To build: 
+
+Install libsdl (http://www.libsdl.org).  Then type 'make'.
+
+
+To run:
+
+There are a number of different graphics hacks in this package.
+Mostly you can run them with a command line like
+
+$ ./runtusdl '`wator.ts` load'
+
+or slime.ts, or whatever.  There are some .sh scripts to launch some
+of them, also.
+
+
+Evolving art:
+
+These are launched with turtles.sh (the new program) and evo.sh (the
+old one).  turtles.c and evo.c are the underlying code.  See
+README.evo for usage instructions; 'turtles' only supports a few of
+the evo commands at the moment.  newturtles.c was an attempt to get
+the turtles to interact with each other by conditioning their behavior
+on the local concentration of color laid down by all turtles so far,
+but it's not working very well and it's better to use turtles.c for
+now.
+
+
+FIXME: This bundles an older version of github.com/darius/tusl. I
+should remove this local version and make a dependency on the separate
+Tusl package. Also: merge commented-evo.c into evo.c.
