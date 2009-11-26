@@ -6,7 +6,7 @@
 :drawing  0 0 ;
 :drawn  wxyz- ;
 
-:my-p (variable)   \ ugh
+:my-p (0 variable)   \ ugh
 :plot  my-p !  wxyz-  w y +  x z +  my-p @ grid8!  w x  y 1+ z ;
 :...  yz-  0 z 1+ ;
 

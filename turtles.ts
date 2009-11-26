@@ -5,7 +5,7 @@
 
 :thru?		tcols trows * = ;
 
-:event (2variable)
+:event (0 0 2variable)
 :poll		listen event 2!  event @ ;
 :reset		0 0 event 2! ;
 :absorb		event @ (unless)  wait event 2! ;
@@ -18,19 +18,19 @@
 \ Evolution
 
 :init z-	z randomize  z reshow ;
-:fresh		'init(#) 0 gridding ;
+:fresh		'init 0 gridding ;
 
 :try z-		z 0 tcopy  z fuck  z evaluate ;
 :new? z-	z 0 tsame? 0= ;
 :mutating z-	z try  z new? (unless)  z mutating ;
 :replace z-	z mutating  show ;
 
-:choose z-	0 z tcopy  0 reshow  'replace(#) 1 gridding ;
+:choose z-	0 z tcopy  0 reshow  'replace 1 gridding ;
 
 
 \ UI
 
-:quit? (variable)
+:quit? (0 variable)
 
 :on-keyboard z-	reset
 		$f z = (if)  fresh ;         (then)
@@ -54,7 +54,7 @@
 :waiting	listen-quit? (unless)  waiting ;
 :redisplay	0 display  show ;
 
-:step		hatch{ 90 lt  10 fd  -90 lt }  26 lt  20 fd  -11 lt  
+:step		hatch[ 90 lt  10 fd  -90 lt ]  26 lt  20 fd  -11 lt  
         	plot redisplay ;
 
 \ Highly imperfect yin-yang symbol 

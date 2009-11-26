@@ -28,9 +28,12 @@ main (int argc, char **argv)
   ts_VM *vm = make_sdl_vm ();
   if (NULL == vm)
     die ("%s", strerror (errno));
+
   seed_rand ((int) time (NULL));
   srand ((unsigned long) time (NULL));
-  ts_install_float_words (vm);
+
+  ts_set_output_file_stream (vm, stdout, NULL);
+  ts_set_input_file_stream (vm, stdin, NULL);
 
   ts_install (vm, "exit", ts_run_void_1, (int) exit);
   install_ants_words (vm);

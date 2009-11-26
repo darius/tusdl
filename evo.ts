@@ -21,7 +21,7 @@
 :thru?		cols rows * = ;
 
 
-:event (2variable)
+:event (0 0 2variable)
 :poll		listen event 2!  event @ ;
 :reset		0 0 event 2! ;
 :absorb		event @ (unless)  wait event 2! ;
@@ -35,7 +35,7 @@
 :good-start?	.complexity minplexity > ;
 :initing z-	z .populate  z good-start? (unless)  z initing ;
 :init z-	z initing  z .reshow ;
-:fresh		'init(#) 0 gridding ;
+:fresh		'init 0 gridding ;
 
 :try z-		z 0 .copy  z .mutate ;
 :new? z-	z 0 .same-thumbs? 0= ;
@@ -43,7 +43,7 @@
 		(if)  z .generate  show  z new? ;  (then)  false ;
 :mutating z-	z try  z decent? (unless)  z mutating ;
 :replace z-	z mutating  show ;
-:choose z-	0 z .copy  0 .reshow  'replace(#) 1 gridding ;
+:choose z-	0 z .copy  0 .reshow  'replace 1 gridding ;
 
 
 \ Gene frequencies
@@ -89,7 +89,7 @@
 :enlarging yz-	z thru? (unless)  y z zoom  poll (unless)  y z 1+ enlarging ;
 :big		0 0 enlarging ;
 
-:grid		'.reshow(#) 0 gridding ;
+:grid		'.reshow 0 gridding ;
 
 :atomic-enlarging yz-
         	z thru? (unless)  y z .generate-big  y z 1+ atomic-enlarging ;
@@ -102,7 +102,7 @@
 :sliding z-	z thru? (unless)  z 0 enlarging  poll (unless)  z 1+ sliding ;
 :slideshow	0 sliding ;
 
-:quit? (variable)
+:quit? (0 variable)
 
 :on-keyboard z-	reset
 		$! z = (if)  command-loop ;  (then)
@@ -131,5 +131,5 @@
 \ (32 start-sdl restore grid reacting) \ for debugging
 
 :make-ppm z-	0 z .copy  atomic-big  save-image ;
-(32 no-sdl restore 0 make-ppm  \ for batch image generation
- (32 start-sdl main)              \ for ordinary interactive runs
+\ (32 no-sdl restore 0 make-ppm  \ for batch image generation
+(32 start-sdl main)              \ for ordinary interactive runs

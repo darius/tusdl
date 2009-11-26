@@ -2,7 +2,7 @@
 #define TUSDL_H
 
 #include "SDL.h"
-#include "tusl.h"
+#include <tusl.h>
 
 enum { 
 #if 0

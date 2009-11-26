@@ -323,9 +323,9 @@ static Instruc_type op_types[] = {
   { 1, 0, "plot",    plot_op },
   { 1, 1, "fd",      fd },
   { 1, 1, "lt",      lt },
-  { 1, 0, "hatch{",  hatch_op },
-  { 1, 0, "}",       end_op },
-  { 1, 1, "if<{",    if_less_op },
+  { 1, 0, "hatch[",  hatch_op },
+  { 1, 0, "]",       end_op },
+  { 1, 1, "if<[",    if_less_op },
   { 1, 0, "diffuse", diffuse_op },
   { 1, 1, "+r",      add_r },
   { 1, 1, "+g",      add_g },
@@ -476,8 +476,8 @@ install_turtle_words (ts_VM *vm)
   ts_install (vm, "plot", ts_run_void_0, (int) plot);
   ts_install (vm, "fd", ts_run_void_1, (int) fd);
   ts_install (vm, "lt", ts_run_void_1, (int) lt);
-  ts_install (vm, "hatch{", ts_run_void_0, (int) hatch_start);
-  ts_install (vm, "}", ts_run_void_0, (int) end);
+  ts_install (vm, "hatch[", ts_run_void_0, (int) hatch_start);
+  ts_install (vm, "]", ts_run_void_0, (int) end);
   ts_install (vm, "diffuse", ts_run_void_0, (int) diffuse);
 
   ts_install (vm, "display", ts_run_void_1, (int) display);

@@ -7,7 +7,9 @@ Distributed under the MIT license
 
 To build: 
 
-Install libsdl (http://www.libsdl.org).  Then type 'make'.
+Install libsdl (http://www.libsdl.org).
+Install tusl (http://github.com/darius/tusl).
+Then type 'make'.
 
 
 To run:
@@ -31,8 +33,3 @@ the turtles to interact with each other by conditioning their behavior
 on the local concentration of color laid down by all turtles so far,
 but it's not working very well and it's better to use turtles.c for
 now.
-
-
-FIXME: This bundles an older version of github.com/darius/tusl. I
-should remove this local version and make a dependency on the separate
-Tusl package. Also: merge commented-evo.c into evo.c.

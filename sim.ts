@@ -1,4 +1,4 @@
-"tusl.ts" load
+"/usr/local/share/tusl/tuslrc.ts" load
 
 :listen-quit?  \ True iff keyboard `q' was hit.
   listen yz-  z 1 =  y $q =  and ;
