@@ -1,3 +1,9 @@
+/*
+ The engine for a generator of images by aesthetic selection. The full
+ generator is a Tusl program linking in primitives from this C module.
+ (Most of these comments were added long after it was written.)
+ */
+
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -12,33 +18,43 @@
 #include "sim.h"
 
 
-/* Configuration constants */
+/* Configurable constants */
 
 enum { 
+  /* A genetic program has 'program_length' instructions, operating on a 
+     circular stack of bounded depth. Upon reproduction a certain fraction
+     of instructions are mutated, on average. */
   program_length  = 40,		/* genes */
   mutation_rate   = 15,		/* percent */
   stack_limit     = 6,
 
 #if 0
+  /* Image operations work on one rectangular tile at a time, for 
+     efficiency; around 1k pixels turned out to be optimal, at least
+     back when I wrote this. */
   tile_width      = 48,		/* in pixels */
   tile_height     = 32,
-  bits_per_pixel  = 32,
 
+  /* A thumbnail uses a whole number of tiles, both horizontally and
+     vertically. */
   thumb_cols      = 5,		/* in tiles */
   thumb_rows      = 5,
 #else
   tile_width      = 32,		/* in pixels */
   tile_height     = 32,
-  bits_per_pixel  = 32,
 
   thumb_cols      = 4,		/* in tiles */
   thumb_rows      = 4,
 #endif
 
+  node_table_size = 101, 	/* # of buckets in a hashtable */
+};
+
+/* Derived constants */
+enum {
+  /* And the full image grid uses a whole number of thumbnails. */
   cols            = grid_width / (tile_width*thumb_cols), /* in thumbs */
   rows            = grid_height / (tile_height*thumb_rows),
-
-  node_table_size = 101,
 
   tile_size       = tile_width * tile_height,
 
@@ -47,11 +63,17 @@ enum {
   thumb_size      = thumb_width * thumb_height,
 };
 
+/* Pixel types -- not actually configurable without changing the code
+   manipulating pixel values. */
+enum {
+  bits_per_pixel  = 32
+};
 typedef float Intensity;
 
 
 /* Misc utility functions */
 
+/* Allocate `size' bytes or die. */
 static void *
 allot (size_t size)
 {
@@ -90,6 +112,11 @@ open_save_file (char *buffer, const char *format, const char *mode)
     }
 }
 
+/* Read the next token from `in', placing it nul-terminated into `buf'
+   (of `size' bytes). A token is a maximal string of nonblanks.
+   FIXME Hack alert: we only read up to `size'-1 bytes of the token, and
+   silently return if it's longer in the input.
+   Pre: 0 < size */
 static void
 read_token (FILE *in, char *buf, int size)
 {
@@ -113,6 +140,7 @@ read_token (FILE *in, char *buf, int size)
   *buf = '\0';
 }
 
+/* Return the numeric value of `token' or die. */
 static double
 parse_number (const char *token)
 {
@@ -130,12 +158,15 @@ parse_number (const char *token)
   return value;
 }
 
+/* Return a new random number in 0..n-1.
+   (This could be done more randomly than with '%', you know.) */
 static INLINE unsigned 
 choose (unsigned n)
 {
   return rand () % n;
 }
 
+/* Return a new random number in 0..1. */
 static INLINE double
 choose_double (void)
 {
@@ -145,6 +176,8 @@ choose_double (void)
 
 /* Image tile generation */
 
+/* Convert an intensity ([0..1] nominal range, but may spill out of
+   those limits) to a clipped RGB byte. */  
 static INLINE Uint8
 color_value (Intensity intensity)
 {
@@ -152,18 +185,22 @@ color_value (Intensity intensity)
   return i < 0 ? 0 : 255 < i ? 255 : i;
 }
 
+/* Loop through each local pixel coordinate (x,y) in a tile, 
+   from top left by rows to bottom right.
+   j is the array offset. */
 #define FOR_EACH(x, y, j)              \
   int x, y, j;                         \
   for (y = 0; y < tile_height; ++y)    \
     for (x = 0, j = tile_width * y; x < tile_width; ++x, j = x + tile_width * y)
 
+/* Write a's color values into the grid tile at (x0,y0) (upper left corner). */ 
 static void
 gridify (Intensity **a, int x0, int y0)
 {
   Intensity *ar = a[0], *ag = a[1], *ab = a[2];
   FOR_EACH (x, y, j)
     {
-      Uint32 r = color_value (ab[j]) +
+      Pixel r = color_value (ab[j]) +
 	(color_value (ar[j]) << 16) + 
 	(color_value (ag[j]) << 8);
       put (x0 + x, y0 + y, r);
@@ -173,6 +210,7 @@ gridify (Intensity **a, int x0, int y0)
 
 /* Basic phenotype operations */
 
+/* Fill dest with a constant color. */
 static void
 op_constant (Intensity constant_value, Intensity *dest)
 {
@@ -180,6 +218,34 @@ op_constant (Intensity constant_value, Intensity *dest)
     dest[j] = constant_value;
 }
 
+/* Fill (dr,dg,db) with RGB color values taken by interpreting the
+   corresponding (ar,ag,ab) pixel values as HWB colors.
+
+   The HWB color space is some random space meant to be 'intuitive' --
+   I was hoping that'd bring out striking colors, and it worked pretty
+   well. I think it deserves a lot of any credit for this program's
+   appeal compared to other genetic art thingies I've seen. (It turns
+   out most saved genomes invoke the 'hwb' op at least twice,
+   suggesting that the niceness isn't just a matter of interpreting a
+   final 3d result as a point in this colorspace.)
+
+   I believe I adapted the code from this paper:
+   http://alvyray.com/Papers/PapersCG.htm#HWB
+   http://alvyray.com/Papers/CG/hwb2rgb.htm
+
+   Tweaked partly because of the different function interface and
+   partly because it was producing NaN's or something sometimes.
+   (I don't remember exactly.)
+
+   XXX We seem to be seeing different, and worse, colors when running
+   saved genomes from the Elder Days. Since Intensity is float rather
+   than double, maybe it'd help to use single-precision float functions
+   here? -- like modff instead of modf, and fmodf instead of fmod?
+   Grasping at straws, hurray. Of course, the discrepancy may be elsewhere,
+   but I suspect it's here because the only change was in the colors and
+   because this had been a trouble spot before, as mentioned above.
+   Don't remember if I had any better reason to think so.
+ */
 static void
 op_hwb_color (Intensity *dr, Intensity *dg, Intensity *db,
 	      Intensity *ar, Intensity *ag, Intensity *ab)
@@ -220,11 +286,16 @@ op_hwb_color (Intensity *dr, Intensity *dg, Intensity *db,
     }
 }
 
+/* (x,y) image coordinates of this tile's top-left corner. */
 static double left;
 static double top;
+
+/* width and height in image space of one pixel of this tile. */
 static double x_scale;
 static double y_scale;
 
+/* Fill dest with random 1-bit values, on with probability
+   proportional to 'a'. */
 static void
 op_sprinkle (Intensity *dest, Intensity *a)
 {
@@ -232,6 +303,7 @@ op_sprinkle (Intensity *dest, Intensity *a)
     dest[j] = (fast_rand () / (double)UINT_MAX < a[j] ? 1.0 : 0.0);
 }
 
+/* Nullary operator: dest(x,y) = x. */
 static void
 op_x (Intensity *dest, Intensity *a, Intensity *b)
 {
@@ -239,6 +311,7 @@ op_x (Intensity *dest, Intensity *a, Intensity *b)
     dest[j] = left + x_scale * x;
 }
 
+/* Nullary operator: dest(x,y) = y. */
 static void
 op_y (Intensity *dest, Intensity *a, Intensity *b)
 {
@@ -246,6 +319,8 @@ op_y (Intensity *dest, Intensity *a, Intensity *b)
     dest[j] = top + y_scale * y;
 }
 
+/* Unary operator: dest(x,y) = expr 
+   where expr uses arg1 = a(x,y) */
 #define unop(name, exp)                                \
   static void                                          \
   name (Intensity *dest, Intensity *a, Intensity *b)   \
@@ -268,6 +343,9 @@ unop (op_sin,   sin (arg1))
 unop (op_sqrt,  sqrt (fabs (arg1)))
 unop (op_tan,   tan (arg1))
 
+/* Binary operator: dest(x,y) = expr 
+   where expr uses arg1 = a(x,y) 
+               and arg2 = b(x,y) */
 #define binop(name, exp)                                       \
   static void                                                  \
   name (Intensity *dest, Intensity *a, Intensity *b)           \
@@ -278,12 +356,16 @@ unop (op_tan,   tan (arg1))
       }                                                        \
   }
 
+/* Convert a floating-point intensity to bits available for bitwise ops. 
+   This tends to produce fractally patterns.
+   (This is also useful for hashing an intensity.) */
 static INLINE unsigned
 intensity_to_bits (Intensity x)
 {
   return *(unsigned *)&x;	/* unportable */
 }
 
+/* Convert bits back into a floating-point intensity. */
 static INLINE Intensity
 bits_to_intensity (unsigned u)
 {
@@ -309,7 +391,13 @@ binop (op_xor,
        bits_to_intensity (intensity_to_bits (arg1) ^ intensity_to_bits (arg2)))
 
 
-/* Result graphs */
+/* Result graphs.
+   This 'compiled' representation of an evo program is a DAG of op
+   nodes. Results are cached on each node, so you evaluate by walking
+   the DAG and checking for cached results. I'm not sure why I didn't
+   make the caching more persistent, to speed up repeated evaluations
+   or evaluations of related programs -- IIRC it took too much memory
+   compared to the thumbnail cache. */
 
 typedef enum { 
   end, opc0, opc1, opc2, mix, constant, color, hwb, rotcolor, 
@@ -324,16 +412,21 @@ struct Node {
   Opcode *opcode;
   int arity;
   Node *arguments[3];
-  Intensity constant_value;
-  int step;
+  Intensity constant_value; /* Used only by the constant op */
+  int step;		    /* Program-counter for this operation in
+                               the uncompiled program (only used by
+                               mix and sprinkle ops) */
   char *name;
   unsigned hashcode;
-  Node *next;
-  Intensity *result;
+  Node *next;		    /* The next node in the hashtable bucket. */
+  Intensity *result;	    /* The computed intensity field, or NULL
+                               if not yet computed. */
 };
 
+/* A hashtable with buckets of nodes.  All nodes live here. */
 static Node *node_table[node_table_size];
 
+/* Reclaim all nodes from the table. */
 static void
 free_all_nodes (void)
 {
@@ -350,12 +443,15 @@ free_all_nodes (void)
     }
 }
 
+/* Make a hash value combining two sub-hashes. */
 static INLINE unsigned
 combine (unsigned h1, unsigned h2)
 {
+  /* We rotate h1 to avoid gratuitous symmetry. */
   return ((h1 << 1) | (h1 >> 31)) ^ h2;	/* not really portable */
 }
 
+/* Compute a hash value for node. */
 static unsigned
 node_hash (Node *node)
 {
@@ -370,6 +466,7 @@ node_hash (Node *node)
   return h;
 }
 
+/* Return true iff node1 and node2 are structurally equivalent. */
 static int
 node_equal (Node *node1, Node *node2)
 {
@@ -386,6 +483,8 @@ node_equal (Node *node1, Node *node2)
      node1->step == node2->step);
 }
 
+/* Return the unique node equal to 'node'. Add it to the table if not
+   in there already. */
 static Node *
 uniquify (Node *node)
 {
@@ -402,6 +501,7 @@ uniquify (Node *node)
   return node;
 }
 
+/* Post: no node has a computed intensity field. */
 static void
 reset_cache (void)
 {
@@ -412,6 +512,8 @@ reset_cache (void)
       b->result = NULL;
 }
 
+/* Return the unique node for the given arguments.
+   Pre: the arguments make sense (e.g. arity is right for opcode, etc.) */
 static Node *
 make_node (char *name, OpType type, Opcode opcode, 
 	   int step, Intensity constant_value,
@@ -435,6 +537,7 @@ make_node (char *name, OpType type, Opcode opcode,
 
 static int indent = 0;
 
+/* Debugging aid */
 static void
 node_dump (Node *node)
 {
@@ -450,15 +553,21 @@ node_dump (Node *node)
   --indent;
 }
 
+/* The tile heap holds all intensity tiles. There's space for one 
+   RGB triple for each of 'program_length' instructions, plus one 
+   initial 'zero' tile. */
 static Intensity heap[3 * program_length * tile_size + 1];
 static Intensity *heap_ptr;
 
+/* Free all currently-allocated intensity tiles. */
 static void
 reset_heap (void)
 {
   heap_ptr = heap;
 }
 
+/* Allocate 'blocks' consecutive intensity tiles, starting at the
+   current heap_ptr. */
 static void
 allocate (int blocks)
 {
@@ -467,6 +576,8 @@ allocate (int blocks)
   heap_ptr += blocks * tile_size;
 }
 
+/* Return the tile resulting from evaluating 'node' into the tile at 
+   coordinate index 'tile_id' (caching it). */ 
 static Intensity *
 eval (Node *node, int tile_id)
 {
@@ -540,6 +651,8 @@ enum {
   tile_ids = thumb_rows*thumb_cols + rows*cols
 };
 
+/* Return the tile resulting from evaluating 'node' into the tile
+   at cs:(col,row). */
 static Intensity *
 evaluate (Node *node, Coord_system cs, int col, int row)
 {
@@ -570,6 +683,8 @@ evaluate (Node *node, Coord_system cs, int col, int row)
 
 /* Analyzer */
 
+/* Return true iff 'node' is in the array 'seen' of current length
+   'num_seen', appending it if it's not. */
 static int
 adjoin (Node *node, Node **seen, int *num_seen)
 {
@@ -582,6 +697,12 @@ adjoin (Node *node, Node **seen, int *num_seen)
   return 0;
 }
 
+/* Return the number of nodes reachable from 'node' that aren't
+   in the array 'seen' of current length 'num_seen', appending any
+   newly-reached nodes to that array. 
+   Pre: if a node n is already in the seen array, so are its reachable
+        nodes, unless they're pending in the current recursion... 
+        geez, this specification is more complicated than the code. */
 static int
 count_unvisited_nodes (Node *node, Node **seen, int *num_seen)
 {
@@ -597,7 +718,9 @@ count_unvisited_nodes (Node *node, Node **seen, int *num_seen)
   }
 }
 
-/* Pre: graphs aren't too big */
+/* Return the number of nodes in the graph reachable from {r,g,b}.
+   Pre: graph is no bigger than the biggest possible graph compiled
+        from program_length instructions. */
 static int
 count_reachable_nodes (Node *r, Node *g, Node *b)
 {
@@ -611,7 +734,9 @@ count_reachable_nodes (Node *r, Node *g, Node *b)
 }
 
 
-/* Compiler */
+/* Compiling a program (a sequence of stack ops) into a node graph.
+   This can produce a dag because the stack is circular and of bounded
+   depth. */
 
 typedef struct Instruc Instruc;
 struct Instruc {
@@ -623,12 +748,17 @@ struct Instruc {
   Intensity constant_value;
 };
 
+/* The symbolic stack represents the state produced by executing a sequence
+   of instructions, as a node graph with a node for each RGB component at 
+   each possible stack slot. You produce an image by evaluating the
+   nodes for the top-of-stack. */
 static int stack_ptr = 0;
 
 static Node *r_stack[stack_limit];
 static Node *g_stack[stack_limit];
 static Node *b_stack[stack_limit];
 
+/* Initialize the symbolic stack. */
 static void
 clear_stack (void)
 {
@@ -643,6 +773,9 @@ clear_stack (void)
     }
 }
 
+/* Return the stack index 'increment' steps from 'ptr', with wraparound.
+   Pre: abs(increment) <= stack_limit 
+   FIXME dump the precondition and rewrite for clarity instead of speed */
 static INLINE int
 bump (int ptr, int increment)
 {
@@ -658,6 +791,12 @@ bump (int ptr, int increment)
   return ptr;
 }
 
+/* Symbolically evaluate the execution of *p as if as the given step
+   number in a program, with the given arguments (top of stack, next on 
+   stack, third on stack). Each stack-location argument is an RGB triple
+   of pointers to node pointers. Symbolic evaluation may create new result
+   nodes, mutate some of the RGB triples to point to them, and update the 
+   stack pointer. */
 static void
 really_pretend (Instruc *p, 
 		Node ***tos, Node ***nos, Node ***pos,
@@ -719,6 +858,8 @@ really_pretend (Instruc *p,
   *tos[2] = r2;
 }
 
+/* Symbolically evaluate the execution of *p as if as the given step
+   number in a program. */
 static void
 pretend (Instruc *p, int step)
 {
@@ -744,6 +885,8 @@ pretend (Instruc *p, int step)
   stack_ptr = bump (stack_ptr, p->pushes);
 }
 
+/* Symbolically evaluate 'program', leaving a graph representation of
+   it in the symbolic stack. */
 static void
 compile (Instruc *program)
 {
@@ -758,6 +901,7 @@ compile (Instruc *program)
 
 /* Building and mutating genomes */
 
+/* Make a constant instruction. */
 static Instruc
 make_constant (Intensity value)
 {
@@ -766,17 +910,18 @@ make_constant (Intensity value)
   return result;
 }
 
+/* One of each possible instruction type. */
 static Instruc toolbox[] = {
   { 1, constant, NULL,         0, 1, "constant"}, 
   { 1, opc0,     op_x,         0, 1, "x"},
   { 1, opc0,     op_y,         0, 1, "y"},
   { 1, sprinkle, NULL,         0, 1, "sprinkle"}, /* FIXME: should be 1,1 */
-  /* Ugh, fixing this would change images we've already saved.  So I
+  /* Ugh, fixing this would change images we've already saved. So I
      guess we should grandfather this in, but add another instruction
-     with a different name and a correct pop/push value.  And give 
-     it a random frequency of 0, presumably.  Alternatively, remove 
+     with a different name and a correct pop/push value. And give 
+     it a random frequency of 0, presumably. Alternatively, remove 
      the sprinkle op and convert everything in the `photo album' to 
-     use the mix op in its place.  Is that feasible? */
+     use the mix op in its place. Is that feasible? */
 
   { 1, opc1,     op_abs,       1, 1, "abs"},
   { 1, opc1,     op_atan,      1, 1, "atan"},
@@ -811,6 +956,8 @@ static Instruc toolbox[] = {
   { 1, rotcolor, NULL,         1, 1, "rotcolor"},
 };
 
+/* Return the total of all instruction-type frequencies. 
+   Maybe I should call them weights. */
 static int
 frequency_sum (void)
 {
@@ -820,6 +967,7 @@ frequency_sum (void)
   return sum;
 }
 
+/* Return a random instruction type, weighted by instruction frequency. */
 static Instruc
 weighted_random_instruc (void)
 {
@@ -836,6 +984,7 @@ weighted_random_instruc (void)
     }
 }
 
+/* Return a random instruction, of type weighted by instruction frequency. */
 static Instruc
 random_instruc (void)
 {
@@ -845,6 +994,7 @@ random_instruc (void)
   return result;
 }
 
+/* Set 'pgm' to a program with 'length' random instructions. */
 static void
 randomize (Instruc *pgm, int length)
 {
@@ -854,6 +1004,7 @@ randomize (Instruc *pgm, int length)
   pgm[length-1].type = end;
 }
 
+/* Make a random change to one instruction. */
 static void
 point_mutation (Instruc *ins)
 {
@@ -863,6 +1014,7 @@ point_mutation (Instruc *ins)
     *ins = random_instruc ();
 }
 
+/* Randomly change 0 or more of pgm's instructions. */
 static void
 mutate (Instruc *pgm, int length)
 {
@@ -875,6 +1027,7 @@ mutate (Instruc *pgm, int length)
 
 /* Genotype I/O */
 
+/* Write one instruction to 'out'. */
 static void
 write_instruc (FILE *out, Instruc p)
 {
@@ -884,6 +1037,7 @@ write_instruc (FILE *out, Instruc p)
     fprintf (out, " %s", p.name);
 }
 
+/* Read one instruction from 'in'. Die on any unexpected input. */
 static Instruc
 read_instruc (FILE *in)
 {
@@ -896,6 +1050,7 @@ read_instruc (FILE *in)
   return make_constant (parse_number (name));
 }
 
+/* Write 'pgm' to 'out'. It must have exactly 'length' instructions. */
 static void
 write_program (FILE *out, Instruc *pgm, int length)
 {
@@ -906,6 +1061,8 @@ write_program (FILE *out, Instruc *pgm, int length)
   fprintf (out, "\n");
 }
 
+/* Read 'pgm' from 'in'. It must have exactly 'length' instructions.
+   FIXME make this more flexible */
 static void
 read_program (FILE *in, Instruc *pgm, int length)
 {
@@ -926,7 +1083,7 @@ read_program (FILE *in, Instruc *pgm, int length)
 
 /* Thumbnail cache */
 
-static Uint32 thumbnail_cache[grid_size];
+static Pixel thumbnail_cache[grid_size];
 static int cache_valid[cols][rows];
 
 static void
@@ -965,8 +1122,11 @@ invalidate_cache (int col, int row)
 
 /* Top-level gene stuff */
 
+/* The instructions for each program. 
+   FIXME give a name to this concept of a visible choice */
 static Instruc programs[cols][rows][program_length];
 
+/* Require col and row to be in range. */
 static void
 check_coords (int col, int row)
 {
@@ -976,6 +1136,7 @@ check_coords (int col, int row)
     die ("Bad row: %d\n", row);
 }
 
+/* Fill program (col, row) with a new random program. */
 static void
 populate (int col, int row)
 {
@@ -984,6 +1145,7 @@ populate (int col, int row)
   invalidate_cache (col, row);
 }
 
+/* Mutate program (col, row) randomly. */
 static void
 sample (int col, int row)
 {
@@ -992,6 +1154,7 @@ sample (int col, int row)
   invalidate_cache (col, row);
 }
 
+/* Copy program (col2, row2) into (col1, row1). */
 static void
 copy (int col1, int row1, int col2, int row2)
 {
@@ -1003,6 +1166,8 @@ copy (int col1, int row1, int col2, int row2)
   invalidate_cache (col1, row1);
 }
 
+/* Generate image tile (grid_col, grid_row) for 'program' sector
+   cs:(col,row). [or something. FIXME document this properly] */
 static void
 generate_grid (Instruc *program, Coord_system cs, int col, int row,
 	       int grid_col, int grid_row)
@@ -1021,6 +1186,7 @@ generate_grid (Instruc *program, Coord_system cs, int col, int row,
   }
 }
 
+/* Generate the thumbnail image for program (col, row). */
 static void
 generate (int col, int row)
 {
@@ -1042,6 +1208,8 @@ generate (int col, int row)
   update_cache (col, row);
 }
 
+/* Generate the sector at (col, row) of the full image for
+   program (pcol, prow). */
 static void
 generate_big (int pcol, int prow, int col, int row)
 {
@@ -1056,6 +1224,8 @@ generate_big (int pcol, int prow, int col, int row)
       }
 }
 
+/* Return a measure of the complexity of the program at (col,row):
+   the size of the graph implementing it, after optimization. */
 static int
 complexity (int col, int row)
 {
@@ -1091,6 +1261,8 @@ same_thumbs (int gc, int gr, int hc, int hr)
 
 /* Other top-level commands */
 
+/* Write every program to 'out'. 
+   (For some reason I picked column-major order.) */
 static void
 write_state (FILE *out)
 {
@@ -1100,6 +1272,7 @@ write_state (FILE *out)
       write_program (out, programs[i][j], program_length);
 }
 
+/* Read every program from 'in'. */
 static void
 read_state (FILE *in)
 {
@@ -1132,6 +1305,8 @@ read_random (FILE *in, int lines)
     }
 }
 
+/* Append the state to file evo-state.
+   FIXME code duplication */
 static void
 append (void)
 {
@@ -1160,6 +1335,7 @@ append1 (void)
     }
 }
 
+/* Write the state to file evo-state. */
 static void
 save (void)
 {
@@ -1174,6 +1350,7 @@ save (void)
     }
 }
 
+/* Read the state in from file evo-state. */
 static void
 restore (void)
 {
@@ -1224,6 +1401,7 @@ open_file (const char *filename, const char *mode)
   return file;
 }
 
+/* Write the grid to out as a PPM file. */
 static void
 output_picture (FILE *out)
 {
@@ -1258,6 +1436,7 @@ output_picture (FILE *out)
   }
 }
 
+/* Save the grid to file evoNN.ppm for the next available NN. */
 static void
 save_image (void)
 {
@@ -1273,6 +1452,8 @@ save_image (void)
     }
 }
 
+/* Regenerate the image program from file regress-state, 
+   writing the image to regress-out. */
 static void
 regress (void)
 {
@@ -1308,12 +1489,15 @@ no_sdl (int bits_per_pixel)
 
 /* Main program */
 
+/* Tusl word to run a read-eval-print loop. */
+// XXX use 'repl'
 static void
 command_loop (ts_VM *vm, ts_Word *pw)
 {
   ts_load_interactive (vm, stdin);
 }
 
+/* Expose this C module to Tusl. */
 void
 install_evo_words (ts_VM *vm)
 {
