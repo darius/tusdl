@@ -35,7 +35,7 @@ main (int argc, char **argv)
   ts_set_output_file_stream (vm, stdout, NULL);
   ts_set_input_file_stream (vm, stdin, NULL);
 
-  ts_install (vm, "exit", ts_run_void_1, (int) exit);
+  ts_install (vm, "exit", ts_run_void_1, (tsint) exit);
   install_ants_words (vm);
   install_casdl_words (vm);
   install_evo_words (vm);

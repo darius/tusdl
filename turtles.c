@@ -413,21 +413,21 @@ install_turtle_words (ts_VM *vm)
   ts_install (vm, "tcols",          ts_do_push, cols);
   ts_install (vm, "trows",          ts_do_push, rows);
 
-  ts_install (vm, "plot", ts_run_void_0, (int) plot);
-  ts_install (vm, "fd", ts_run_void_1, (int) fd);
-  ts_install (vm, "lt", ts_run_void_1, (int) lt);
-  ts_install (vm, "hatch[", ts_run_void_0, (int) hatch_start);
-  ts_install (vm, "]", ts_run_void_0, (int) end);
-  ts_install (vm, "diffuse", ts_run_void_0, (int) diffuse);
+  ts_install (vm, "plot", ts_run_void_0, (tsint) plot);
+  ts_install (vm, "fd", ts_run_void_1, (tsint) fd);
+  ts_install (vm, "lt", ts_run_void_1, (tsint) lt);
+  ts_install (vm, "hatch[", ts_run_void_0, (tsint) hatch_start);
+  ts_install (vm, "]", ts_run_void_0, (tsint) end);
+  ts_install (vm, "diffuse", ts_run_void_0, (tsint) diffuse);
 
-  ts_install (vm, "display", ts_run_void_1, (int) display);
-  ts_install (vm, "tcopy", ts_run_void_2, (int) copy);
-  ts_install (vm, "tsame?", ts_run_int_2, (int) tsame);
-  ts_install (vm, "dump-genome", ts_run_void_1, (int) dump_genome);
-  ts_install (vm, "randomize", ts_run_void_1, (int) randomize);
-  ts_install (vm, "evaluate", ts_run_void_1, (int) evaluate);
+  ts_install (vm, "display", ts_run_void_1, (tsint) display);
+  ts_install (vm, "tcopy", ts_run_void_2, (tsint) copy);
+  ts_install (vm, "tsame?", ts_run_int_2, (tsint) tsame);
+  ts_install (vm, "dump-genome", ts_run_void_1, (tsint) dump_genome);
+  ts_install (vm, "randomize", ts_run_void_1, (tsint) randomize);
+  ts_install (vm, "evaluate", ts_run_void_1, (tsint) evaluate);
   /* oops, we were using the same word for evo's mutate: */
-  ts_install (vm, "fuck", ts_run_void_1, (int) mutate);
+  ts_install (vm, "fuck", ts_run_void_1, (tsint) mutate);
 
   reset ();
 }

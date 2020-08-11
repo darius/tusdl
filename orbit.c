@@ -142,7 +142,7 @@ make_particle (int m, int rx, int ry, int vx, int vy)
 void
 install_orbit_words (ts_VM *vm)
 {
-  ts_install (vm, "make-particle",    ts_run_void_5, (int) make_particle);
-  ts_install (vm, "orbit-multishow",  ts_run_void_0, (int) multishow);
-  ts_install (vm, "orbit-tick",       ts_run_void_0, (int) tick);
+  ts_install (vm, "make-particle",    ts_run_void_5, (tsint) make_particle);
+  ts_install (vm, "orbit-multishow",  ts_run_void_0, (tsint) multishow);
+  ts_install (vm, "orbit-tick",       ts_run_void_0, (tsint) tick);
 }

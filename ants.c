@@ -186,6 +186,6 @@ tick (void)
 void
 install_ants_words (ts_VM *vm)
 {
-  ts_install (vm, "ants-genesis", ts_run_void_2, (int) genesis);
-  ts_install (vm, "ants-tick",    ts_run_void_0, (int) tick);
+  ts_install (vm, "ants-genesis", ts_run_void_2, (tsint) genesis);
+  ts_install (vm, "ants-tick",    ts_run_void_0, (tsint) tick);
 }

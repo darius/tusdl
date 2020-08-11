@@ -362,7 +362,7 @@ unop (op_tan,   tan (arg1))
 static INLINE unsigned
 intensity_to_bits (Intensity x)
 {
-  return *(unsigned *)&x;	/* unportable */
+  return *(tsuint *)&x;	/* unportable */
 }
 
 /* Convert bits back into a floating-point intensity. */
@@ -1508,7 +1508,7 @@ install_evo_words (ts_VM *vm)
       char *name = allot (strlen (toolbox[i].name) + 2);
       name[0] = '&';
       strcpy (name+1, toolbox[i].name);
-      ts_install (vm, name, ts_do_push, (int) &toolbox[i].frequency);
+      ts_install (vm, name, ts_do_push, (tsint) &toolbox[i].frequency);
     }
 
   ts_install (vm, "thumb-width",     ts_do_push, thumb_width);
@@ -1518,21 +1518,21 @@ install_evo_words (ts_VM *vm)
 
   ts_install (vm, "command-loop",    command_loop, 0);
 
-  ts_install (vm, "populate",        ts_run_void_2, (int) populate);
-  ts_install (vm, "mutate",          ts_run_void_2, (int) sample);
-  ts_install (vm, "copy",            ts_run_void_4, (int) copy);
-  ts_install (vm, "generate",        ts_run_void_2, (int) generate);
-  ts_install (vm, "generate-big",    ts_run_void_4, (int) generate_big);
-  ts_install (vm, "complexity",      ts_run_int_2,  (int) complexity);
-  ts_install (vm, "same-thumbs?",    ts_run_int_4,  (int) same_thumbs);
+  ts_install (vm, "populate",        ts_run_void_2, (tsint) populate);
+  ts_install (vm, "mutate",          ts_run_void_2, (tsint) sample);
+  ts_install (vm, "copy",            ts_run_void_4, (tsint) copy);
+  ts_install (vm, "generate",        ts_run_void_2, (tsint) generate);
+  ts_install (vm, "generate-big",    ts_run_void_4, (tsint) generate_big);
+  ts_install (vm, "complexity",      ts_run_int_2,  (tsint) complexity);
+  ts_install (vm, "same-thumbs?",    ts_run_int_4,  (tsint) same_thumbs);
 
-  ts_install (vm, "save-image",      ts_run_void_0, (int) save_image);
-  ts_install (vm, "append",          ts_run_void_0, (int) append);
-  ts_install (vm, "append1",         ts_run_void_0, (int) append1);
-  ts_install (vm, "save",            ts_run_void_0, (int) save);
-  ts_install (vm, "restore",         ts_run_void_0, (int) restore);
-  ts_install (vm, "load-random",     ts_run_void_0, (int) load_random);
+  ts_install (vm, "save-image",      ts_run_void_0, (tsint) save_image);
+  ts_install (vm, "append",          ts_run_void_0, (tsint) append);
+  ts_install (vm, "append1",         ts_run_void_0, (tsint) append1);
+  ts_install (vm, "save",            ts_run_void_0, (tsint) save);
+  ts_install (vm, "restore",         ts_run_void_0, (tsint) restore);
+  ts_install (vm, "load-random",     ts_run_void_0, (tsint) load_random);
 
-  ts_install (vm, "regress",         ts_run_void_0, (int) regress);
-  ts_install (vm, "no-sdl",          ts_run_void_1, (int) no_sdl);
+  ts_install (vm, "regress",         ts_run_void_0, (tsint) regress);
+  ts_install (vm, "no-sdl",          ts_run_void_1, (tsint) no_sdl);
 }

@@ -107,19 +107,19 @@ start_sdl (int bits_per_pixel)
 static void
 install_sdl_words (ts_VM *vm)
 {
-  ts_install (vm, "start-sdl",       ts_run_void_1,   (int) start_sdl);
+  ts_install (vm, "start-sdl",       ts_run_void_1,   (tsint) start_sdl);
 
   ts_install (vm, "listen",          listen,          0);
   ts_install (vm, "wait",            blocking_listen, 0);
-  ts_install (vm, "clear",           ts_run_void_0,   (int) clear);
-  ts_install (vm, "clear8",          ts_run_void_0,   (int) clear8);
-  ts_install (vm, "show",            ts_run_void_0,   (int) show);
+  ts_install (vm, "clear",           ts_run_void_0,   (tsint) clear);
+  ts_install (vm, "clear8",          ts_run_void_0,   (tsint) clear8);
+  ts_install (vm, "show",            ts_run_void_0,   (tsint) show);
 
   /* FIXME: needs bounds-check */
-  ts_install (vm, "grid@",           ts_run_int_2,    (int) get);
-  ts_install (vm, "grid!",           ts_run_void_3,   (int) put);
+  ts_install (vm, "grid@",           ts_run_int_2,    (tsint) get);
+  ts_install (vm, "grid!",           ts_run_void_3,   (tsint) put);
 
-  ts_install (vm, "frames",          ts_do_push,      (int) &frame);
+  ts_install (vm, "frames",          ts_do_push,      (tsint) &frame);
 
   ts_install (vm, "width",           ts_do_push,      grid_width);
   ts_install (vm, "height",          ts_do_push,      grid_height);
@@ -130,7 +130,7 @@ install_sdl_words (ts_VM *vm)
 
   ts_load (vm, "sim.ts");
 
-  ts_install (vm, "starting-clocks", ts_do_push,      (int) clock ());
+  ts_install (vm, "starting-clocks", ts_do_push,      (tsint) clock ());
   ts_install (vm, "report-frames",   report_frames,   0);
 }
 

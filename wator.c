@@ -122,9 +122,9 @@ tick (void)
 void
 install_wator_words (ts_VM *vm)
 {
-  ts_install (vm, "wator-genesis",      ts_run_void_2, (int) genesis);
-  ts_install (vm, "wator-tick",         ts_run_void_0, (int) tick);
-  ts_install (vm, "fish-breeding-age",  ts_do_push, (int) &fish_breeding_age);
-  ts_install (vm, "shark-breeding-age", ts_do_push, (int) &shark_breeding_age);
-  ts_install (vm, "shark-starve-time",  ts_do_push, (int) &shark_starve_time);
+  ts_install (vm, "wator-genesis",      ts_run_void_2, (tsint) genesis);
+  ts_install (vm, "wator-tick",         ts_run_void_0, (tsint) tick);
+  ts_install (vm, "fish-breeding-age",  ts_do_push, (tsint) &fish_breeding_age);
+  ts_install (vm, "shark-breeding-age", ts_do_push, (tsint) &shark_breeding_age);
+  ts_install (vm, "shark-starve-time",  ts_do_push, (tsint) &shark_starve_time);
 }

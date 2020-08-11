@@ -95,6 +95,6 @@ genesis (int population)
 void
 install_slime_words (ts_VM *vm)
 {
-  ts_install (vm, "slime-genesis", ts_run_void_1, (int) genesis);
-  ts_install (vm, "slime-tick",    ts_run_void_0, (int) tick);
+  ts_install (vm, "slime-genesis", ts_run_void_1, (tsint) genesis);
+  ts_install (vm, "slime-tick",    ts_run_void_0, (tsint) tick);
 }

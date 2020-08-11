@@ -236,19 +236,19 @@ four_colors (void)
 void
 install_casdl_words (ts_VM *vm)
 {
-  ts_install (vm, "4-colors",        ts_run_void_0, (int) four_colors);
-  ts_install (vm, "wipe-colors",     ts_run_void_0, (int) wipe_colors);
-  ts_install (vm, "decay-colors",    ts_run_void_0, (int) decay_colors);
+  ts_install (vm, "4-colors",        ts_run_void_0, (tsint) four_colors);
+  ts_install (vm, "wipe-colors",     ts_run_void_0, (tsint) wipe_colors);
+  ts_install (vm, "decay-colors",    ts_run_void_0, (tsint) decay_colors);
 
-  ts_install (vm, "sprinkle",        ts_run_void_0, (int) sprinkle);
-  ts_install (vm, "grid8@",          ts_run_int_2,  (int) get_clipped);
-  ts_install (vm, "grid8!",          ts_run_void_3, (int) put_clipped);
+  ts_install (vm, "sprinkle",        ts_run_void_0, (tsint) sprinkle);
+  ts_install (vm, "grid8@",          ts_run_int_2,  (tsint) get_clipped);
+  ts_install (vm, "grid8!",          ts_run_void_3, (tsint) put_clipped);
 
-  ts_install (vm, "life-step",       ts_run_void_0, (int) life_step);
-  ts_install (vm, "margolus-step",   ts_run_void_0, (int) margolus_step);
-  ts_install (vm, "munch-step",      ts_run_void_0, (int) munch_step);
-  ts_install (vm, "sierp-step",      ts_run_void_4, (int) sierp_step);
+  ts_install (vm, "life-step",       ts_run_void_0, (tsint) life_step);
+  ts_install (vm, "margolus-step",   ts_run_void_0, (tsint) margolus_step);
+  ts_install (vm, "munch-step",      ts_run_void_0, (tsint) munch_step);
+  ts_install (vm, "sierp-step",      ts_run_void_4, (tsint) sierp_step);
 
   /* gcc complains about this in cygwin, argh */
-  /*  ts_install (vm, "sleep",           ts_run_int_1,  (int) sleep); */
+  /*  ts_install (vm, "sleep",           ts_run_int_1,  (tsint) sleep); */
 }
